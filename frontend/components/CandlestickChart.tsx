@@ -11,7 +11,7 @@ import {
 } from "recharts";
 
 // Define interfaces for data structures
-interface CandlestickData {
+export interface CandlestickChartData {
     x: string;
     high: number;
     low: number;
@@ -19,8 +19,8 @@ interface CandlestickData {
     close: number;
 }
 
-interface CandlestickChartProps {
-    data: CandlestickData[];
+export interface CandlestickChartProps {
+    data: CandlestickChartData[];
 }
 
 interface CandlestickProps {
@@ -85,7 +85,7 @@ const Candlestick: React.FC<CandlestickProps> = (props) => {
  * @param {CandlestickData[]} data - The raw candlestick data
  * @returns {Array} The prepared data for the chart
  */
-const prepareData = (data: CandlestickData[]) => {
+const prepareData = (data: CandlestickChartData[]) => {
     return data.map(({ open, close, x, ...other }) => ({
         ...other,
         x,

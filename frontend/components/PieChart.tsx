@@ -1,13 +1,13 @@
 import React from 'react';
-import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, TooltipProps } from 'recharts';
+import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, ResponsiveContainer, TooltipProps } from 'recharts';
 
 // Define interfaces for data structures
-interface PieChartData {
+export interface PieChartData {
     labels: string[];
     data: number[];
 }
 
-interface PieChartProps {
+export interface PieChartProps {
     data: PieChartData;
 }
 

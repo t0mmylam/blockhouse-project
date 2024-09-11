@@ -11,12 +11,12 @@ import {
 } from "recharts";
 
 // Define interfaces for data structures
-interface BarChartData {
+export interface BarChartData {
     labels: string[];
     data: number[];
 }
 
-interface BarChartProps {
+export interface BarChartProps {
     data: BarChartData;
 }
 

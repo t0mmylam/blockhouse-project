@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import PieChart from "./PieChart";
-import BarChart from "./BarChart";
-import LineChart from "./LineChart";
-import CandlestickChart from "./CandlestickChart";
+import PieChart, { PieChartData } from "./PieChart";
+import BarChart, { BarChartData } from "./BarChart";
+import LineChart, { LineChartData } from "./LineChart";
+import CandlestickChart, { CandlestickChartData } from "./CandlestickChart";
 
 // Define types for the chart data
 interface ChartData {
-    pie: any | null;
-    bar: any | null;
-    line: any | null;
-    candlestick: any | null;
+    pie: PieChartData | null;
+    bar: BarChartData | null;
+    line: LineChartData | null;
+    candlestick: CandlestickChartData[] | null;
 }
 
 /**
@@ -58,7 +58,9 @@ const Dashboard: React.FC = () => {
                     pie: pieData,
                     bar: barData,
                     line: lineData,
-                    candlestick: candlestickData,
+                    candlestick: Array.isArray(candlestickData)
+                        ? candlestickData
+                        : candlestickData.data,
                 });
             } catch (error) {
                 console.error("Error fetching chart data:", error);
@@ -98,7 +100,7 @@ const Dashboard: React.FC = () => {
             )}
             {chartData.candlestick && (
                 <div className="bg-white shadow rounded-lg p-6">
-                    <CandlestickChart data={chartData.candlestick.data} />
+                    <CandlestickChart data={chartData.candlestick} />
                 </div>
             )}
         </div>
