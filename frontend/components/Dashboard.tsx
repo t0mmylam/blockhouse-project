@@ -1,68 +1,108 @@
-// components/Dashboard.tsx
+"use client";
 
-'use client';
+import React, { useState, useEffect } from "react";
+import PieChart from "./PieChart";
+import BarChart from "./BarChart";
+import LineChart from "./LineChart";
+import CandlestickChart from "./CandlestickChart";
 
-import React, { useState, useEffect } from 'react';
-import PieChart from './PieChart';
-import BarChart from './BarChart';
-import LineChart from './LineChart';
-import CandlestickChart from './CandlestickChart';
+// Define types for the chart data
+interface ChartData {
+    pie: any | null;
+    bar: any | null;
+    line: any | null;
+    candlestick: any | null;
+}
 
+/**
+ * Dashboard component that fetches and displays various charts
+ */
 const Dashboard: React.FC = () => {
-  const [chartData, setChartData] = useState({
-    pie: null,
-    bar: null,
-    line: null,
-    candlestick: null,
-  });
+    // State to hold the chart data
+    const [chartData, setChartData] = useState<ChartData>({
+        pie: null,
+        bar: null,
+        line: null,
+        candlestick: null,
+    });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [pieData, barData, lineData, candlestickData] = await Promise.all([
-          fetch('http://localhost:8000/api/pie-chart-data/').then(res => res.json()),
-          fetch('http://localhost:8000/api/bar-chart-data/').then(res => res.json()),
-          fetch('http://localhost:8000/api/line-chart-data/').then(res => res.json()),
-          fetch('http://localhost:8000/api/candlestick-data/').then(res => res.json()),
-        ]);
-        setChartData({
-          pie: pieData,
-          bar: barData,
-          line: lineData,
-          candlestick: candlestickData,
-        });
-      } catch (error) {
-        console.error('Error fetching chart data:', error);
-      }
-    };
+    // State to handle loading status
+    const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    fetchData();
-  }, []);
+    // State to handle error messages
+    const [error, setError] = useState<string | null>(null);
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {chartData.pie && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <PieChart data={chartData.pie} />
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const [pieData, barData, lineData, candlestickData] =
+                    await Promise.all([
+                        fetch("http://localhost:8000/api/pie-chart-data/").then(
+                            (res) => res.json()
+                        ),
+                        fetch("http://localhost:8000/api/bar-chart-data/").then(
+                            (res) => res.json()
+                        ),
+                        fetch(
+                            "http://localhost:8000/api/line-chart-data/"
+                        ).then((res) => res.json()),
+                        fetch(
+                            "http://localhost:8000/api/candlestick-data/"
+                        ).then((res) => res.json()),
+                    ]);
+
+                setChartData({
+                    pie: pieData,
+                    bar: barData,
+                    line: lineData,
+                    candlestick: candlestickData,
+                });
+            } catch (error) {
+                console.error("Error fetching chart data:", error);
+                setError("Failed to fetch chart data. Please try again later.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (isLoading) {
+        return <div className="text-center py-10">Loading charts...</div>;
+    }
+
+    if (error) {
+        return <div className="text-center py-10 text-red-500">{error}</div>;
+    }
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {chartData.pie && (
+                <div className="bg-white shadow rounded-lg p-6">
+                    <PieChart data={chartData.pie} />
+                </div>
+            )}
+            {chartData.bar && (
+                <div className="bg-white shadow rounded-lg p-6">
+                    <BarChart data={chartData.bar} />
+                </div>
+            )}
+            {chartData.line && (
+                <div className="bg-white shadow rounded-lg p-6">
+                    <LineChart data={chartData.line} />
+                </div>
+            )}
+            {chartData.candlestick && (
+                <div className="bg-white shadow rounded-lg p-6">
+                    <CandlestickChart data={chartData.candlestick.data} />
+                </div>
+            )}
         </div>
-      )}
-      {chartData.bar && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <BarChart data={chartData.bar} />
-        </div>
-      )}
-      {chartData.line && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <LineChart data={chartData.line} />
-        </div>
-      )}
-      {chartData.candlestick && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <CandlestickChart data={chartData.candlestick.data} />
-        </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default Dashboard;

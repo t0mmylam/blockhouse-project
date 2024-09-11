@@ -7,8 +7,10 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
+    TooltipProps,
 } from "recharts";
 
+// Define interfaces for data structures
 interface CandlestickData {
     x: string;
     high: number;
@@ -21,8 +23,21 @@ interface CandlestickChartProps {
     data: CandlestickData[];
 }
 
-// https://codesandbox.io/p/sandbox/recharts-candlesticks-8m6n8?file=%2Fsrc%2FChart.jsx%3A1%2C1-326%2C1
-const Candlestick = (props: any) => {
+interface CandlestickProps {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    low: number;
+    high: number;
+    openClose: [number, number];
+}
+
+/**
+ * Candlestick component for rendering individual candlesticks
+ * @param {CandlestickProps} props - The properties for the candlestick
+ */
+const Candlestick: React.FC<CandlestickProps> = (props) => {
     const {
         x,
         y,
@@ -40,49 +55,36 @@ const Candlestick = (props: any) => {
         <g stroke={color} fill="none" strokeWidth="2">
             <path
                 d={`
-          M ${x},${y}
-          L ${x},${y + height}
-          L ${x + width},${y + height}
-          L ${x + width},${y}
-          L ${x},${y}
-        `}
+                    M ${x},${y}
+                    L ${x},${y + height}
+                    L ${x + width},${y + height}
+                    L ${x + width},${y}
+                    L ${x},${y}
+                `}
             />
             {/* bottom line */}
-            {isGrowing ? (
-                <path
-                    d={`
-            M ${x + width / 2}, ${y + height}
-            v ${(open - low) * ratio}
-          `}
-                />
-            ) : (
-                <path
-                    d={`
-            M ${x + width / 2}, ${y}
-            v ${(close - low) * ratio}
-          `}
-                />
-            )}
+            <path
+                d={`
+                    M ${x + width / 2}, ${isGrowing ? y + height : y}
+                    v ${((isGrowing ? open : close) - low) * ratio}
+                `}
+            />
             {/* top line */}
-            {isGrowing ? (
-                <path
-                    d={`
-            M ${x + width / 2}, ${y}
-            v ${(close - high) * ratio}
-          `}
-                />
-            ) : (
-                <path
-                    d={`
-            M ${x + width / 2}, ${y + height}
-            v ${(open - high) * ratio}
-          `}
-                />
-            )}
+            <path
+                d={`
+                    M ${x + width / 2}, ${isGrowing ? y : y + height}
+                    v ${((isGrowing ? close : open) - high) * ratio}
+                `}
+            />
         </g>
     );
 };
 
+/**
+ * Prepares the data for the CandlestickChart
+ * @param {CandlestickData[]} data - The raw candlestick data
+ * @returns {Array} The prepared data for the chart
+ */
 const prepareData = (data: CandlestickData[]) => {
     return data.map(({ open, close, x, ...other }) => ({
         ...other,
@@ -91,6 +93,10 @@ const prepareData = (data: CandlestickData[]) => {
     }));
 };
 
+/**
+ * CandlestickChart component for rendering a candlestick chart
+ * @param {CandlestickChartProps} props - The properties for the chart
+ */
 const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
     const preparedData = prepareData(data);
 
@@ -100,6 +106,39 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
     const maxValue = Math.max(
         ...data.map((item) => Math.max(item.high, item.open, item.close))
     );
+
+    /**
+     * Formats the date string for X-axis ticks
+     * @param {string} dateStr - The date string to format
+     * @returns {string} The formatted date string
+     */
+    const formatDateTick = (dateStr: string): string => {
+        const date = new Date(dateStr);
+        return date.toISOString().split("T")[0]; // Returns in YYYY-MM-DD format
+    };
+
+    /**
+     * Renders the tooltip content
+     * @param {TooltipProps<number, string>} props - The tooltip properties
+     * @returns {React.ReactNode} The tooltip content
+     */
+    const renderTooltip = ({ payload }: TooltipProps<number, string>): React.ReactNode => {
+        if (payload && payload.length) {
+            const data = payload[0].payload as CandlestickProps;
+            const date = new Date(data.x);
+            date.setDate(date.getDate() + 1);
+            return (
+                <div className="bg-white p-2 border border-gray-300 shadow-md">
+                    <p className="font-bold">{`Date: ${date.toLocaleDateString()}`}</p>
+                    <p>{`Open: ${data.openClose[0]}`}</p>
+                    <p>{`High: ${data.high}`}</p>
+                    <p>{`Low: ${data.low}`}</p>
+                    <p>{`Close: ${data.openClose[1]}`}</p>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="w-full h-[400px]">
@@ -112,42 +151,27 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                        dataKey="x"
-                        tickFormatter={(dateStr) => {
-                            const date = new Date(dateStr);
-                            date.setDate(date.getDate() + 1);
-                            return `${date.getFullYear()}-${String(
-                                date.getMonth() + 1
-                            ).padStart(2, "0")}-${String(
-                                date.getDate()
-                            ).padStart(2, "0")}`;
-                        }}
-                    />
+                    <XAxis dataKey="x" tickFormatter={formatDateTick} />
                     <YAxis domain={[minValue, maxValue]} />
-                    <Tooltip
-                        content={({ payload, label }) => {
-                            if (payload && payload.length) {
-                                const data = payload[0].payload;
-                                const date = new Date(data.x);
-                                date.setDate(date.getDate() + 1);
-                                return (
-                                    <div className="bg-white p-2 border border-gray-300 shadow-md">
-                                        <p className="font-bold">{`Date: ${date.toLocaleDateString()}`}</p>
-                                        <p>{`Open: ${data.openClose[0]}`}</p>
-                                        <p>{`High: ${data.high}`}</p>
-                                        <p>{`Low: ${data.low}`}</p>
-                                        <p>{`Close: ${data.openClose[1]}`}</p>
-                                    </div>
-                                );
-                            }
-                            return null;
-                        }}
-                    />
+                    <Tooltip content={renderTooltip} />
                     <Bar
                         dataKey="openClose"
                         fill="#8884d8"
-                        shape={<Candlestick />}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        shape={(props: any) => {
+                            const { x, y, width, height, payload } = props;
+                            return (
+                                <Candlestick
+                                    x={x}
+                                    y={y}
+                                    width={width}
+                                    height={height}
+                                    low={payload.low}
+                                    high={payload.high}
+                                    openClose={payload.openClose}
+                                />
+                            );
+                        }}
                     />
                 </ComposedChart>
             </ResponsiveContainer>
